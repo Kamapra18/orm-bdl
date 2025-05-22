@@ -1,0 +1,16 @@
+{
+  "name": "tugas-bdl",
+  "version": "1.0.0",
+  "description": "**Sequelize** adalah ORM (Object-Relational Mapping) berbasis Node.js yang mendukung berbagai jenis database seperti MySQL, PostgreSQL, SQLite, dan MSSQL. Sequelize mempermudah pengelolaan database dengan cara mendefinisikan tabel sebagai model JavaScript dan memungkinkan operasi CRUD tanpa menulis query SQL langsung.",
+  "main": "sequelize-app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "mysql2": "^3.14.1",
+    "sequelize": "^6.37.7"
+  }
+}
