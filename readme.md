@@ -1,24 +1,32 @@
+Berikut ini adalah **file lengkap `README.md`** yang bisa langsung kamu salin untuk tugas BDL-mu:
+
+---
+
+````markdown
 # Tugas BDL – Review ORM: Sequelize (Node.js + MySQL)
 
 **Nama:** I Kadek Mario Prayoga  
 **NIM:** 2301020018  
 
 ---
+
 ## 1. Pendahuluan
-Object Relational Mapping (ORM) adalah pendekatan pemrograman yang menghubungkan antara objek dalam kode program dengan tabel dalam database relasional. Sequelize merupakan ORM untuk Node.js yang mendukung berbagai database seperti MySQL, PostgreSQL, SQLite, dan MSSQL.
+
+Object Relational Mapping (ORM) adalah pendekatan pemrograman yang menghubungkan antara objek dalam kode program dengan tabel dalam database relasional. Sequelize merupakan ORM untuk Node.js yang mendukung berbagai database seperti MySQL, PostgreSQL, SQLite, dan MSSQL. Dengan Sequelize, kita dapat melakukan operasi database seperti membuat, membaca, memperbarui, dan menghapus data tanpa menulis query SQL mentah.
 
 ---
 
 ## 2. Cara Instalasi
 
 ### a. Inisialisasi Proyek
+
 ```bash
-mkdir "Tugas-BDL"
-cd "Tugas-BDL"
+mkdir Tugas-BDL
+cd Tugas-BDL
 npm init -y
 ````
 
-### b. Instalasi Sequelize dan MySQL driver
+### b. Instalasi Sequelize dan MySQL2
 
 ```bash
 npm install sequelize mysql2
@@ -42,29 +50,45 @@ const sequelize = new Sequelize('mahasiswa', 'root', '', {
 ### b. Definisi Model
 
 ```js
-const Mahasiswa = sequelize.define('Mahasiswa', {
-  nama: Sequelize.STRING,
-  jurusan: Sequelize.STRING
-});
+const { DataTypes, Model } = require('sequelize');
 
-const MataKuliah = sequelize.define('MataKuliah', {
-  nama: Sequelize.STRING
-});
+class Mahasiswa extends Model {}
+Mahasiswa.init({
+  nama: DataTypes.STRING,
+  jurusan: DataTypes.STRING
+}, { sequelize, modelName: 'Mahasiswa' });
 
-Mahasiswa.hasMany(MataKuliah);
-MataKuliah.belongsTo(Mahasiswa);
+class MataKuliah extends Model {}
+MataKuliah.init({
+  nama: DataTypes.STRING
+}, { sequelize, modelName: 'MataKuliah' });
+
+Mahasiswa.hasMany(MataKuliah, { foreignKey: 'mahasiswaId' });
+MataKuliah.belongsTo(Mahasiswa, { foreignKey: 'mahasiswaId' });
 ```
 
-### c. Operasi CRUD dan Relasi
+### c. Operasi CRUD
 
 ```js
-await sequelize.sync({ force: true });
-const mario = await Mahasiswa.create({ nama: 'Mario', jurusan: 'Informatika' });
-await mario.createMataKuliah({ nama: 'Basis Data' });
-await mario.createMataKuliah({ nama: 'Algoritma' });
+// CREATE
+const mhs = await Mahasiswa.create({ nama: 'Wisnu', jurusan: 'Informatika' });
+await MataKuliah.bulkCreate([
+  { nama: 'Basis Data', mahasiswaId: mhs.id },
+  { nama: 'Algoritma', mahasiswaId: mhs.id }
+]);
 
+// READ
 const data = await Mahasiswa.findAll({ include: MataKuliah });
-console.log(JSON.stringify(data, null, 2));
+
+// UPDATE
+await MataKuliah.update(
+  { nama: 'Pemrograman Web' },
+  { where: { nama: 'Basis Data' } }
+);
+
+// DELETE
+const mk = await MataKuliah.findOne({ where: { nama: 'Algoritma' } });
+if (mk) await mk.destroy();
 ```
 
 ---
@@ -72,24 +96,26 @@ console.log(JSON.stringify(data, null, 2));
 ## 4. Fitur-Fitur Sequelize
 
 * **Relasi Antar Tabel**: One-to-One, One-to-Many, Many-to-Many
-* **Eager Loading dan Lazy Loading**
-* **Sinkronisasi Skema Otomatis**
+* **Model Berbasis Kelas (Class-based)**
 * **Validasi dan Constraints**
-* **Hooks & Lifecycle Callbacks**
+* **Eager & Lazy Loading**
+* **Sinkronisasi Skema Otomatis**
+* **Lifecycle Hooks**
 
 ---
 
 ## 5. Contoh Program (`sequelize-app.js`)
 
 ```js
-const { Sequelize, DataTypes } = require('sequelize');
+const { Sequelize, DataTypes, Model } = require('sequelize');
 
 const sequelize = new Sequelize('mahasiswa', 'root', '', {
   host: 'localhost',
   dialect: 'mysql'
 });
 
-const Mahasiswa = sequelize.define('Mahasiswa', {
+class Mahasiswa extends Model {}
+Mahasiswa.init({
   nama: {
     type: DataTypes.STRING,
     allowNull: false
@@ -98,32 +124,55 @@ const Mahasiswa = sequelize.define('Mahasiswa', {
     type: DataTypes.STRING,
     allowNull: false
   }
-});
+}, { sequelize, modelName: 'Mahasiswa' });
 
-const MataKuliah = sequelize.define('MataKuliah', {
+class MataKuliah extends Model {}
+MataKuliah.init({
   nama: {
     type: DataTypes.STRING,
     allowNull: false
   }
-});
+}, { sequelize, modelName: 'MataKuliah' });
 
-Mahasiswa.hasMany(MataKuliah);
-MataKuliah.belongsTo(Mahasiswa);
+Mahasiswa.hasMany(MataKuliah, { foreignKey: 'mahasiswaId' });
+MataKuliah.belongsTo(Mahasiswa, { foreignKey: 'mahasiswaId' });
 
-async function start() {
+async function main() {
   try {
     await sequelize.authenticate();
     console.log('✅ Koneksi berhasil');
 
     await sequelize.sync({ force: true });
-    console.log('✅ Model tersinkronisasi');
+    console.log('✅ Model disinkronisasi');
 
-    const mario = await Mahasiswa.create({ nama: 'Mario', jurusan: 'Informatika' });
-    await mario.createMataKuliah({ nama: 'Basis Data' });
-    await mario.createMataKuliah({ nama: 'Algoritma' });
+    const wisnu = await Mahasiswa.create({ nama: 'Wisnu', jurusan: 'Informatika' });
 
-    const data = await Mahasiswa.findAll({ include: MataKuliah });
-    console.log(JSON.stringify(data, null, 2));
+    await MataKuliah.bulkCreate([
+      { nama: 'Basis Data', mahasiswaId: wisnu.id },
+      { nama: 'Algoritma', mahasiswaId: wisnu.id },
+      { nama: 'Jaringan Komputer', mahasiswaId: wisnu.id }
+    ]);
+
+    const andi = await Mahasiswa.create({ nama: 'Andi', jurusan: 'Sistem Informasi' });
+
+    await MataKuliah.update(
+      { nama: 'Pemrograman Web' },
+      { where: { nama: 'Basis Data' } }
+    );
+
+    await Mahasiswa.update(
+      { jurusan: 'Teknik Informatika' },
+      { where: { nama: 'Andi' } }
+    );
+
+    const algoritma = await MataKuliah.findOne({ where: { nama: 'Algoritma' } });
+    if (algoritma) await algoritma.destroy();
+
+    const andiData = await Mahasiswa.findOne({ where: { nama: 'Andi' } });
+    if (andiData) await andiData.destroy();
+
+    const result = await Mahasiswa.findAll({ include: MataKuliah });
+    console.log(JSON.stringify(result, null, 2));
   } catch (error) {
     console.error('❌ Error:', error);
   } finally {
@@ -131,7 +180,7 @@ async function start() {
   }
 }
 
-start();
+main();
 ```
 
 ---
@@ -142,20 +191,21 @@ start();
 node sequelize-app.js
 ```
 
-Pastikan MySQL aktif dan terdapat database `mahasiswa`.
+> Pastikan MySQL aktif dan database `mahasiswa` sudah tersedia.
 
 ---
 
-## 7. Output Program
+## 7. Output Program (Contoh)
 
 ```json
 [
   {
-    "nama": "Mario",
+    "id": 1,
+    "nama": "Wisnu",
     "jurusan": "Informatika",
     "MataKuliahs": [
-      { "nama": "Basis Data" },
-      { "nama": "Algoritma" }
+      { "id": 1, "nama": "Pemrograman Web", "mahasiswaId": 1 },
+      { "id": 3, "nama": "Jaringan Komputer", "mahasiswaId": 1 }
     ]
   }
 ]
@@ -165,7 +215,6 @@ Pastikan MySQL aktif dan terdapat database `mahasiswa`.
 
 ## 8. Kesimpulan
 
-Sequelize mempermudah pengembangan aplikasi backend dengan fitur ORM modern. Relasi antar tabel, sinkronisasi model, serta dukungan untuk lazy & eager loading menjadikannya powerful untuk berbagai jenis proyek Node.js.
+Sequelize mempermudah pengembangan aplikasi backend dengan fitur ORM modern. Relasi antar tabel, sinkronisasi model, validasi, dan dukungan eager/lazy loading menjadikan Sequelize sangat powerful dan efisien untuk digunakan dalam proyek Node.js yang berbasis database relasional.
 
 ---
-
